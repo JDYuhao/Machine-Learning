@@ -31,11 +31,15 @@ class adaboostClassifer:
         self.numberOfClass = len(np.unique(iris_target))
 
     def splitData(self, ratio = 0.4):
-        totalNum = len(self.data)
-        trainLoc = np.random.choice(totalNum,
-                    int(ratio*totalNum), replace=False)
+        totalLen = len(self.data)
+        totalLoc = range(totalLen)
+        np.random.shuffle(totalLoc)
+        
+        trainLoc = totalLoc[:int(ratio*totalLen)]
+        testLoc = total[int(ratio*totalLen+1):]
+        
         self.trainData = self.data[trainLoc, :]
-        self.testData = self.data[-trainLoc, :]
+        self.testData = self.data[testLoc, :]
 
 
         #赋予训练数据训练的初始权重
