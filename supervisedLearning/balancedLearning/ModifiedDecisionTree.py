@@ -1,5 +1,39 @@
 #-*- coding: utf-8 -*-
 __author__ = 'qinyuhao'
+'''
+－－－－－－－－－－－－－－－－－－－－－－－－－
+@文件描述：
+该文件时决策树的的实现，可以针对连续变量和分类变量进行树划分
+该文件不仅具有预测功能，同时可以对变量重要性进行排序
+在确定是否为分类变量时，该程序处理方法比较简单，认为可以转化为
+浮点函数的变量是连续变量，不可以的就是分类变量。
+－－－－－－－－－－－－－－－－－－－－－－－－－
+@使用方法：
+1. 初始化树：
+    myTree = DTree(featureName, parameter)
+    %fetureName传入一个list,记录不同feature的名字，而不用加入flag
+    %parameter是一个字典，记录树训练的参数：
+     目前实现的key有:
+        parameter = {"imPurityMtd": "ent", "maxRatio": 0.9, "max_depth":3}  
+        ＃imPurityMtd -> 不纯度计算方法，ent代表熵，gini代表Gini系数
+        ＃maxRatio -> 每片枝叶最大类占比的最小值
+        ＃max_depth -> 树的最大深度
+2. 读入文件数据：
+    myTree.loadDataSet(filename) #文件以\t分隔，最后一列是flag
+3. 训练集测试集切分：
+    myTree.trainTestSplit(ratio = 0.5) ratio ->  分隔比例
+    可以通过myTree.trainData, myTree.testData 查看结果
+4. 训练树:
+    myTree.train()
+    训练结果可以通过myTree.tree查看
+    同时变量重要性可以通过myTree.importance查看
+5. 预测:
+    myTree.predict(measure="acc")
+    目前只实现了acc的计算，返回acc指标
+    同时预测结果可以通过myTree.predictFlag查看
+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+'''
+
 
 import math
 import random
@@ -9,7 +43,7 @@ from copy import deepcopy
 #该函数对读入数据的每一行做处理
 def lineTransfer(line):
     transferLine = []
-    eachline = line.strip().split(",")
+    eachline = line.strip().split("\t")
     for item in eachline:
         try:
             transferLine.append(float(item))
@@ -28,6 +62,7 @@ class DTree:
         self.parameter = parameter #决策数前剪枝时用到的参数
         self.labels = featureName #存储feature的名字
         self.importance = dict(zip(self.labels,[0.0 for item in self.labels]))#存取变量的重要性
+        self.predictFlag = []#存储预测的结果
 
     #读入数据集
     def loadDataSet(self, filename):
@@ -222,7 +257,9 @@ class DTree:
         for testVec in self.testData:
             label = self.predictOneVec(self.tree, testVec)
             predLabels.append(label)
-
+        
+        self.predictFlag = preLabels
+        
         if measure == "acc":
             totalTestLen = len(self.testData)
             accCount = 0
