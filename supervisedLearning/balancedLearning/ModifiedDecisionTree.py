@@ -145,23 +145,29 @@ class DTree:
 
         return baseSplitValue, leftList, rightList
 
+    #确定最好的分类标签
     def findBestSplitFeature(self, dataset):
         baseImpurity = self.calcImpurity(dataset)
         baseGain = 0
 
         for col in range(len(dataset[0])-1):
+            splitInfo = 0.0
             if isinstance(col, str):
                 newImpurity = 0.0
                 allValues = set(line[col] for line in dataset)
                 for value in allValues:
+                    prob = 1.0*len(splitDataset)/len(dataset)
                     splitDataset = self.splitDatasetForCate(dataset, col, value)
-                    newImpurity += 1.0*len(splitDataset)/len(dataset)\
-                                   *self.calcImpurity(splitDataset)
+                    newImpurity += prob*self.calcImpurity(splitDataset)
+                    splitInfo -= prob*math.log(prob)
             else:
                 baseSplitValue, leftList, rightList = self.splitDatasetForCon(dataset, col)
-                newImpurity = 1.0*len(leftList)/len(dataset)*self.calcImpurity(leftList)+\
-                    1.0*len(rightList)/len(dataset)*self.calcImpurity(rightList)
-            gain = baseImpurity - newImpurity
+                leftProb = 1.0*len(leftList)/len(dataset)
+                rightProb = 1.0*len(rightList)/len(dataset)
+                newImpurity = leftProb*self.calcImpurity(leftList)+\
+                    rightProb*self.calcImpurity(rightList)
+                splitInfo -= (leftProb*math.log(leftProb)+rightProb*math.log(rightProb))
+            gain = (baseImpurity - newImpurity)/splitInfo
             if gain > baseGain:
                 baseGain = gain
                 selectCol = col
